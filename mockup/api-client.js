@@ -535,7 +535,7 @@
           } });
           overlay.remove();
           await loadInventory();
-          toast('Producto guardado en SQLite.');
+          toast('Producto guardado correctamente.');
         } catch (error) {
           toast(error.message, true);
         }
