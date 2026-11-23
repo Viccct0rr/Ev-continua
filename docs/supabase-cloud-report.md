@@ -2,7 +2,7 @@
 
 **Informe técnico de configuración**
 **Fecha:** 11 de noviembre de 2026
-**Repositorio:** [Viccct0rr/burgerflow-act-1-h4](https://github.com/Viccct0rr/burgerflow-act-1-h4)
+**Repositorio:** [Viccct0rr/Ev-continua](https://github.com/Viccct0rr/Ev-continua)
 
 ## 1. Objetivo y alcance
 
