@@ -25,6 +25,103 @@ async function login(app, email) {
   return agent;
 }
 
+test('Supabase Auth sessions use the remote profile and deny missing remote permissions', async (t) => {
+  const db = initializeDatabase(new Database(':memory:'), DEMO_PASSWORD);
+  t.after(() => db.close());
+  const authUser = { id: 'auth-user-customer', email: 'remote.customer@example.test' };
+  const profile = {
+    id: 41,
+    auth_user_id: authUser.id,
+    name: 'Cliente remoto',
+    email: authUser.email,
+    role_id: 'customer',
+    active: true
+  };
+  const remoteOrder = {
+    id: 12,
+    code: 'BF-REMOTE',
+    cliente_id: profile.id,
+    repartidor_id: null,
+    order_type: 'delivery',
+    status: 'pending',
+    created_at: '2026-01-01T10:00:00Z',
+    order_items: [{
+      id: 7,
+      product_id: 3,
+      product_name: 'Burger remota',
+      quantity: 1,
+      unit_price_cents: 500,
+      line_total_cents: 500,
+      personalizations: []
+    }],
+    order_financials: {
+      subtotal_cents: 500,
+      tax_cents: 40,
+      service_cents: 50,
+      total_cents: 590
+    },
+    delivery_info: {
+      customer_name: 'Cliente remoto',
+      phone: '+1 555 0100',
+      address: 'Dirección remota'
+    }
+  };
+  const supabaseClientFactory = () => ({
+    auth: {
+      signInWithPassword: async () => ({
+        data: {
+          user: authUser,
+          session: { access_token: 'access-token', refresh_token: 'refresh-token' }
+        },
+        error: null
+      }),
+      setSession: async (session) => ({ data: { session }, error: null }),
+      getUser: async () => ({ data: { user: authUser }, error: null })
+    },
+    from: (table) => {
+      const builder = {
+        select() { return this; },
+        eq() { return this; },
+        order() { return this; },
+        limit() { return this; },
+        maybeSingle: async () => ({ data: table === 'users' ? profile : null, error: null }),
+        then(resolve, reject) {
+          return Promise.resolve({
+            data: table === 'orders' ? [remoteOrder] : [],
+            error: null
+          }).then(resolve, reject);
+        }
+      };
+      return builder;
+    },
+    rpc: async () => ({ data: false, error: null })
+  });
+  const app = createApp({
+    db,
+    supabaseMode: true,
+    supabaseClientFactory,
+    testMode: true,
+    sessionSecret: 'test-secret-that-is-long-enough'
+  });
+
+  const customer = request.agent(app);
+  const loginResponse = await customer.post('/api/auth/login').send({
+    email: authUser.email,
+    password: 'SupabaseTestPassword1!'
+  }).expect(200);
+  assert.deepEqual(loginResponse.body.user, {
+    id: 41,
+    name: 'Cliente remoto',
+    email: authUser.email,
+    role: 'customer'
+  });
+  const orders = (await customer.get('/api/orders').expect(200)).body.orders;
+  assert.equal(orders[0].delivery.address, 'Dirección remota');
+  assert.equal(orders[0].totalCents, 590);
+  assert.equal('paymentMethod' in orders[0], false);
+  await customer.get('/api/inventory').expect(403);
+});
+
 async function createDeliveryOrder(app, email = 'cliente@burgerflow.local') {
   const customer = await login(app, email);
   const product = (await customer.get('/api/products').expect(200)).body.products[0];

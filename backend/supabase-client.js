@@ -1,11 +1,11 @@
 const { createClient } = require('@supabase/supabase-js');
 
-function createSupabaseClient() {
+function projectConfig() {
   const url = process.env.SUPABASE_URL?.trim();
   const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY?.trim();
 
   if (!url || !publishableKey) {
-    throw new Error('SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY deben estar configuradas.');
+    throw new Error('SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY deben estar configuradas para DATA_BACKEND=supabase.');
   }
 
   let parsedUrl;
@@ -21,6 +21,11 @@ function createSupabaseClient() {
     throw new Error('SUPABASE_PUBLISHABLE_KEY debe ser una clave publishable; no uses claves secret o service_role.');
   }
 
+  return { url, publishableKey };
+}
+
+function createSupabaseClient() {
+  const { url, publishableKey } = projectConfig();
   return createClient(url, publishableKey, {
     auth: {
       autoRefreshToken: false,
@@ -30,4 +35,19 @@ function createSupabaseClient() {
   });
 }
 
-module.exports = { createSupabaseClient };
+function createSupabaseAdminClient() {
+  const { url } = projectConfig();
+  const secretKey = process.env.SUPABASE_SECRET_KEY?.trim();
+  if (!secretKey || !secretKey.startsWith('sb_secret_')) {
+    throw new Error('SUPABASE_SECRET_KEY debe ser una clave secret del servidor; no uses una clave publishable ni service_role antigua.');
+  }
+  return createClient(url, secretKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false
+    }
+  });
+}
+
+module.exports = { createSupabaseClient, createSupabaseAdminClient };

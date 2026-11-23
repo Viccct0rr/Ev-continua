@@ -27,7 +27,7 @@ La interfaz permanece en `mockup/` porque Express la publica directamente; `back
 
 ## Preparación Supabase Cloud
 
-La CLI y `@supabase/supabase-js` están instalados para una integración futura. BurgerFlow continúa usando SQLite; el cliente Supabase aún no está conectado al servidor y no se han creado tablas ni migraciones remotas. Revisa el [informe técnico en PDF](docs/supabase-cloud-report.pdf), su [fuente Markdown](docs/supabase-cloud-report.md) y la [guía de configuración](SUPABASE_SETUP.md). La autenticación CLI y la clave publishable local siguen pendientes.
+El modo Supabase para Auth y CRUD/RLS se verificó contra el proyecto Cloud con sesiones Auth normales. Las tres migraciones están aplicadas; el smoke test completo cubrió productos, inventario, pedidos, delivery, permisos por rol, reasignación A→B y persistencia tras reiniciar la API, y limpió sus fixtures. Después se cargó el catálogo ficticio autorizado: la API pública devuelve 11 productos activos y el baseline remoto conserva 11 productos/inventarios, sin usuarios ni pedidos de prueba. Dos intentos completos iniciales posteriores a la semilla tuvieron respuestas HTTP 500 intermitentes; una ejecución completa final pasó todos los casos y limpió sus fixtures. SQLite sigue siendo el modo predeterminado y no se importaron ni eliminaron datos locales. Consulta la [guía Supabase](SUPABASE_SETUP.md), el [análisis de integración](docs/supabase-integration/ANALISIS.md) y el [checklist de verificación](docs/supabase-integration/CHECKLIST.md) para ver comandos y evidencia.
 
 ## Ejecución local en Windows
 
